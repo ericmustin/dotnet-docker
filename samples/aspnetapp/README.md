@@ -62,6 +62,7 @@ To build and run the sample in docker, Correlated Logs and Traces collected by t
 ```console
 cd samples
 cd aspnetapp
+docker build --pull -t aspnetapp .
 ```
 
 Next, create a docker network
