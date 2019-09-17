@@ -7,13 +7,24 @@ using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Configuration;
+using log4net;
+using log4net.Config;
+
+[assembly: log4net.Config.XmlConfigurator(ConfigFile = "App.config", Watch = true)]
+
 
 namespace aspnetapp
 {
     public class Program
     {
+
+        private static ILog logger = LogManager.GetLogger(typeof(Program));
+
         public static void Main(string[] args)
         {
+
+            logger.Debug("This is my second debug message");             
             CreateWebHostBuilder(args).Build().Run();
         }
 

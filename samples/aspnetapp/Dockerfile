@@ -11,8 +11,24 @@ COPY aspnetapp/. ./aspnetapp/
 WORKDIR /app/aspnetapp
 RUN dotnet publish -c Release -o out
 
-
 FROM mcr.microsoft.com/dotnet/core/aspnet:2.2 AS runtime
 WORKDIR /app
 COPY --from=build /app/aspnetapp/out ./
+
+RUN apt-get update && apt-get install sudo && apt-get install curl && apt-get install tar && apt-get install bash
+
+RUN mkdir -p /opt/datadog
+
+RUN curl -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v1.7.0/datadog-dotnet-apm-1.7.0.tar.gz \
+| sudo tar xzf - -C /opt/datadog
+
+ENV DD_TRACE_DEBUG=true
+ENV DD_AGENT_HOST=datadog-agent
+ENV DD_TRACE_AGENT_PORT=8126
+ENV DD_LOGS_INJECTION=true
+ENV CORECLR_ENABLE_PROFILING=1
+ENV CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}
+ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
+ENV DD_INTEGRATIONS=/opt/datadog/integrations.json
+
 ENTRYPOINT ["dotnet", "aspnetapp.dll"]
