@@ -30,7 +30,7 @@ git clone https://github.com/dotnet/dotnet-docker/
 
 You can also [download the repository as a zip](https://github.com/dotnet/dotnet-docker/archive/master.zip).
 
-## Build and run the sample with Docker
+## Build and run the sample with Docker (no datadog agent)
 
 You can build and run the sample in Docker using the following commands. The instructions assume that you are in the root of the repository.
 
@@ -55,107 +55,48 @@ After the application starts, navigate to `http://localhost:8000` in your web br
 
 > Note: The `-p` argument maps port 8000 on your local machine to port 80 in the container (the form of the port mapping is `host:container`). See the [Docker run reference](https://docs.docker.com/engine/reference/commandline/run/) for more information on commandline parameters. In some cases, you might see an error because the host port you select is already in use. Choose a different port in that case.
 
-## Additional Samples
+## Build and run the sample with Docker (with Datadog Agent)
 
-Multiple variations of this sample have been provided, as follows. Some of these example Dockerfiles are demonstrated later. Specify an alternate Dockerfile via the `-f` argument.
-
-* [Multi-arch sample](Dockerfile)
-* [Nanoserver 1909 sample](Dockerfile.nanoserver-1909)
-* [Alpine sample](Dockerfile.alpine-x64)
-
-## Deploying with HTTPS
-
-ASP.NET Core uses [HTTPS by default](https://docs.microsoft.com/en-us/aspnet/core/security/enforcing-ssl). You can [configure ASP.NET Core to use HTTPS with Docker](aspnetcore-docker-https.md).
-
-## Build and run the sample for Alpine X64 with Docker
-
-You can build and run the sample for Alpine using the following instructions. Make sure Docker is set to Linux containers if you are on Windows.
+To build and run the sample in docker, Correlated Logs and Traces collected by the Datadog Agent
 
 ```console
 cd samples
 cd aspnetapp
-docker build --pull -t aspnetapp -f Dockerfile.alpine-x64 .
-docker run --name aspnetcore_sample --rm -it -p 8000:80 aspnetapp
+docker build --pull -t aspnetapp .
+```
+
+Next, create a docker network
+
+```console
+docker network create dotnetconnect
+```
+
+Then, start the datadog container agent. Be sure to replace the below <YOUR_API_KEY> with your Datadog API Key. You'll notice we have the datadog-agent running on the network we just created
+
+```console
+# Datadog Agent
+docker run -d --name datadog-agent \
+              --network dotnetconnect \
+              -v /var/run/docker.sock:/var/run/docker.sock:ro \
+              -v /proc/:/host/proc/:ro \
+              -v /sys/fs/cgroup/:/host/sys/fs/cgroup:ro \
+              -e DD_API_KEY=<YOUR_API_KEY> \
+              -e DD_APM_ENABLED=true \
+              -e DD_APM_NON_LOCAL_TRAFFIC=true \
+              -e DD_LOGS_ENABLED=true \
+              -e DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL=true \
+              -e DD_AC_EXCLUDE="name:datadog-agent" \
+              datadog/agent:latest
+```
+
+Finally, start your application container on the same network as the agent is running on. In the Dockerfile for this application you'll notice we've enabled pointed the the .NET Tracer to send traces to our agent running in the container `datadog-agent` (ENV DD_AGENT_HOST=datadog-agent) 
+
+```console
+docker run -d --name aspnetcore_sample --network dotnetconnect --rm -it -p 8000:80 aspnetapp
 ```
 
 After the application starts, navigate to `http://localhost:8000` in your web browser.
 
-## Build and run the sample for Ubuntu 18.04 with Docker
+Visit `http://localhost:8000/home/privacy` to generate Traces of the http outgoing requests. 
 
-You can also build for [Ubuntu 18.04](https://hub.docker.com/_/ubuntu/), with a `bionic` tag. The `bionic` tags are documented at [dotnet/core/sdk](https://hub.docker.com/_/microsoft-dotnet-core-sdk/) and [dotnet/core/aspnet](https://hub.docker.com/_/microsoft-dotnet-core-aspnet/). You would switch to use the `2.2-bionic` tag for both the build and runtime phases.
 
-## Build and run the sample for Linux ARM32 with Docker
-
-You can build and run the sample for ARM32 with the [Use ASP.NET Core on Linux ARM32 with Docker](aspnetcore-docker-arm32.md) instructions.
-
-## Build and run the sample for Linux ARM64 with Docker
-
-You can build and run the sample for ARM64 with the [Use ASP.NET Core on Linux ARM64 with Docker](aspnetcore-docker-arm64.md) instructions.
-
-## Develop ASP.NET Core Applications in a container
-
-You can develop applications without a .NET Core installation on your machine with the [Develop ASP.NET Core applications in a container](aspnet-docker-dev-in-container.md) instructions. These instructions are also useful if your development and production environments do not match.
-
-## Deploying to Production vs Development
-
-The approach for running containers differs between development and production.
-
-In production, you will typically start your container with `docker run -d`. This argument starts the container as a service, without any console interaction. You then interact with it through other Docker commands or APIs exposed by the containerized application.
-
-In development, you will typically start containers with `docker run --rm -it`. These arguments enable you to see a console (important when there are errors), terminate the container with `CTRL-C` and cleans up all container resources when the container is terminated. You also typically don't mind blocking the console. This approach is demonstrated in prior examples in this document.
-
-We recommend that you do not use `--rm` in production. It cleans up container resources, preventing you from collecting logs that may have been captured in a container that has either stopped or crashed.
-
-## Build and run the sample locally
-
-You can build and run the sample locally with the [.NET Core 2.2 SDK](https://www.microsoft.com/net/download/core) using the following commands. The commands assume that you are in the root of the repository.
-
-```console
-cd samples
-cd aspnetapp
-dotnet run
-```
-
-After the application starts, visit `http://localhost:5000` in your web browser.
-
-You can produce an application that is ready to deploy to production locally using the following command.
-
-```console
-dotnet publish -c Release -o out
-```
-
-You can run the application using the following commands.
-
-```console
-cd out
-dotnet aspnetapp.dll
-```
-
-Note: The `-c Release` argument builds the application in release mode (the default is debug mode). See the [dotnet publish reference](https://docs.microsoft.com/dotnet/core/tools/dotnet-publish) for more information on commandline parameters.
-
-## .NET Core Resources
-
-More Samples
-
-* [.NET Core Docker Samples](../README.md)
-* [.NET Framework Docker Samples](https://github.com/microsoft/dotnet-framework-docker/blob/master/samples/README.md)
-
-Docs and More Information:
-
-* [.NET Docs](https://docs.microsoft.com/dotnet/)
-* [ASP.NET Docs](https://docs.microsoft.com/aspnet/)
-* [dotnet/core](https://github.com/dotnet/core) for starting with .NET Core on GitHub.
-* [dotnet/announcements](https://github.com/dotnet/announcements/issues) for .NET announcements.
-
-## Related Docker Hub Repositories
-
-.NET Core:
-
-* [dotnet/core](https://hub.docker.com/_/microsoft-dotnet-core/): .NET Core
-* [dotnet/core/samples](https://hub.docker.com/_/microsoft-dotnet-core-samples/): .NET Core Samples
-* [dotnet/core-nightly](https://hub.docker.com/_/microsoft-dotnet-core-nightly/): .NET Core (Preview)
-
-.NET Framework:
-
-* [dotnet/framework](https://hub.docker.com/_/microsoft-dotnet-framework/): .NET Framework, ASP.NET and WCF
-* [dotnet/framework/samples](https://hub.docker.com/_/microsoft-dotnet-framework-samples/): .NET Framework, ASP.NET and WCF Samples

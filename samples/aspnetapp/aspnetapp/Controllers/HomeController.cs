@@ -5,6 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Net;
+
 using aspnetapp.Models;
 
 namespace aspnetapp.Controllers
@@ -25,6 +27,12 @@ namespace aspnetapp.Controllers
 
         public IActionResult Privacy()
         {
+
+            using (var wb = new WebClient())
+            {
+                var response = wb.DownloadString("https://www.google.com");
+            }
+
             return View();
         }
 
