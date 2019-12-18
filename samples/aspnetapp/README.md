@@ -57,7 +57,7 @@ After the application starts, navigate to `http://localhost:8000` in your web br
 
 ## Build and run the sample with Docker (with Datadog Agent)
 
-To build and run the sample in docker, Correlated Logs and Traces collected by the Datadog Agent
+To build and run the sample in docker, and generate Traces collected by the Datadog Agent
 
 ```console
 cd samples
