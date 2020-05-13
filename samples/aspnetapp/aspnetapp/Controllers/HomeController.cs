@@ -8,23 +8,29 @@ using Microsoft.Extensions.Logging;
 using System.Net;
 
 using aspnetapp.Models;
+using Filters;
+using Datadog.Trace;
 
 namespace aspnetapp.Controllers
 {
+    
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
 
+        
         public HomeController(ILogger<HomeController> logger)
         {
             _logger = logger;
         }
 
+        [ExampleFilterAttributeAsync]
         public IActionResult Index()
         {
             return View();
         }
 
+        [ExampleFilterAttribute]
         public IActionResult Privacy()
         {
 
@@ -32,6 +38,8 @@ namespace aspnetapp.Controllers
             {
                 var response = wb.DownloadString("https://www.google.com");
             }
+
+            var scope = Tracer.Instance.ActiveScope;
 
             return View();
         }

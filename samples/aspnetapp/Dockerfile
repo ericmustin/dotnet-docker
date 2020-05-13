@@ -4,11 +4,15 @@ WORKDIR /app
 # copy csproj and restore as distinct layers
 COPY *.sln .
 COPY aspnetapp/*.csproj ./aspnetapp/
+
 RUN dotnet restore
+
 
 # copy everything else and build app
 COPY aspnetapp/. ./aspnetapp/
 WORKDIR /app/aspnetapp
+
+RUN dotnet add package Datadog.Trace --version 1.16.2
 RUN dotnet publish -c Release -o out
 
 
@@ -22,8 +26,10 @@ RUN apt-get update && apt-get install curl && apt-get install tar && apt-get ins
 RUN mkdir -p /opt/datadog
 RUN mkdir -p /var/log/datadog
 
-RUN curl -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v1.11.0/datadog-dotnet-apm-1.11.0.tar.gz \
+RUN curl -L https://github.com/DataDog/dd-trace-dotnet/releases/download/v1.16.2/datadog-dotnet-apm-1.16.2.tar.gz \
 | tar xzf - -C /opt/datadog
+
+
 
 ENV DD_TRACE_DEBUG=true
 ENV DD_AGENT_HOST=datadog-agent
