@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Datadog.Trace;
 using Microsoft.Extensions.Logging;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+
 
 namespace Filters  
 {  
@@ -15,13 +17,13 @@ namespace Filters
             //To do : before the action executes  
             var scope = Tracer.Instance.ActiveScope;
             
-           if (scope?.Span != null)
+            if (scope?.Span != null)
             {
-				scope.Span.SetTag("workingfilterbefore", "yesbefore");
+                scope.Span.SetTag("workingfilterbefore", "yesbefore");
             }
             else 
             {
-            	scope.Span.SetTag("workingfiterbefore", "nobefore");
+                scope.Span.SetTag("workingfiterbefore", "nobefore");
             }
         }  
   
@@ -30,47 +32,54 @@ namespace Filters
             //To do : after the action executes  
             var scope = Tracer.Instance.ActiveScope;
             
-           if (scope?.Span != null)
+            if (scope?.Span != null)
             {
-				scope.Span.SetTag("workingfilterafter", "yesafter");
+                 scope.Span.SetTag("workingfilterafter", "yesafter");
             }
             else 
             {
-            	scope.Span.SetTag("workingfilterafter", "noafter");
-            }			
+                scope.Span.SetTag("workingfilterafter", "noafter");
+            }   
         }  
     }
 
 
-    public class ExampleFilterAttributeAsync : ActionFilterAttribute
+    public class ExampleFilterAttributeAsync : TypeFilterAttribute
     {
-        public override async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
-        {  
-            //To do : after the action executes  
-            var scope = Tracer.Instance.ActiveScope;
-            
-           if (scope?.Span != null)
-            {
-                scope.Span.SetTag("workingfilterasyncbefore", "yesasyncbefore");
-            }
-            else 
-            {
-                scope.Span.SetTag("workingfilterasyncbefore", "noasyncbefore");
-            }    
+        public ExampleFilterAttributeAsync() : base(typeof(ExampleFilterAttributeAsyncImpl))
+        {
+        }
+ 
+        private class ExampleFilterAttributeAsyncImpl : IAsyncActionFilter        
 
-            var resultContext = await next();
+        {
+            public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
+            {  
+                //To do : after the action executes  
+                var scope = Tracer.Instance.ActiveScope;
+                
+                if (scope?.Span != null)
+                {
+                    scope.Span.SetTag("workingfilterasyncbefore", "yesasyncbefore");
+                }
+                else 
+                {
+                    scope.Span.SetTag("workingfilterasyncbefore", "noasyncbefore");
+                }    
 
-            var scopetwo = Tracer.Instance.ActiveScope;
+                var resultContext = await next();
 
-           if (scopetwo?.Span != null)
-            {
-                scopetwo.Span.SetTag("workingfilterasyncafter", "yesasyncafter");
-            }
-            else 
-            {
-                scopetwo.Span.SetTag("workingfilterasyncafter", "noasyncafter");
-            }    
+                var scopetwo = Tracer.Instance.ActiveScope;
 
-        }   
+                if (scopetwo?.Span != null)
+                {
+                    scopetwo.Span.SetTag("workingfilterasyncafter", "yesasyncafter");
+                }
+                else 
+                {
+                    scopetwo.Span.SetTag("workingfilterasyncafter", "noasyncafter");
+                }
+            }   
+        }
     }
 } 
